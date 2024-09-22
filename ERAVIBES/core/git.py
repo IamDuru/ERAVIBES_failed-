@@ -73,3 +73,4 @@ def git():
         LOGGER.error(f"Error running Git command: {e}")
     except Exception as e:
         LOGGER.error(f"An unexpected error occurred: {e}")
+
