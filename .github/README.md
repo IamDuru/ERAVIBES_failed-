@@ -28,7 +28,7 @@
 - For getting out from tmux session : Press `Ctrl+b` and then `d`<br>
 
 
-# Duru Music Configs
+# Era Vibes Configs
  [Checkout Here For Config Vars](https://github.com/IamDuru/ERAVIBES/blob/master/config/README.md)
 # 🏷 Support / Assistance
 
