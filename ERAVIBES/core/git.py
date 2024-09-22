@@ -1,3 +1,12 @@
+#
+# Copyright (C) 2024 by Iamduru@Github, < https://github.com/IamDuru/ERAVIBES >.
+#
+# This file is part of < https://github.com/IamDuru/ERAVIBES > project,
+# and is released under the "GNU v3.0 License Agreement".
+# Please see < https://github.com/IamDuru/ERAVIBES/blob/master/LICENSE >
+#
+# All rights reserved.
+#
 import asyncio
 import shlex
 from typing import Tuple
@@ -39,9 +48,9 @@ def git():
         UPSTREAM_REPO = config.UPSTREAM_REPO
     try:
         repo = Repo()
-        LOGGER(__name__).info(f"Git Client Found [VPS DEPLOYER]")
+        LOGGER(name).info(f"Git Client Found [VPS DEPLOYER]")
     except GitCommandError:
-        LOGGER(__name__).info(f"Invalid Git Command")
+        LOGGER(name).info(f"Invalid Git Command")
     except InvalidGitRepositoryError:
         repo = Repo.init()
         if "origin" in repo.remotes:
@@ -68,4 +77,4 @@ def git():
         except GitCommandError:
             repo.git.reset("--hard", "FETCH_HEAD")
         install_req("pip3 install --no-cache-dir -r requirements.txt")
-        LOGGER(__name__).info(f"Fetching updates from upstream repository...")
+        LOGGER(name).info(f"Fetching updates from upstream repository...")
