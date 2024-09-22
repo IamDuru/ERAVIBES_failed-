@@ -8,6 +8,8 @@
 # All rights reserved.
 #
 
+# ERAVIBES/core/git.py
+
 import asyncio
 import shlex
 from typing import Tuple
@@ -16,7 +18,7 @@ import git
 
 import config
 
-from ..logging import LOGGER
+from ERAVIBES.plugins.logging import LOGGER
 
 def install_req(cmd: str) -> Tuple[str, str, int, int]:
     async def install_requirements():
@@ -73,4 +75,3 @@ def git():
         LOGGER.error(f"Error running Git command: {e}")
     except Exception as e:
         LOGGER.error(f"An unexpected error occurred: {e}")
-
