@@ -18,7 +18,6 @@ import config
 
 from ..logging import LOGGER
 
-
 def install_req(cmd: str) -> Tuple[str, str, int, int]:
     async def install_requirements():
         args = shlex.split(cmd)
@@ -48,13 +47,21 @@ def git():
         origin.fetch()
         LOGGER.info("Fetched updates from upstream repository.")
 
+        # Check if the branch exists
+        branch_name = config.UPSTREAM_BRANCH
+        if branch_name in origin.refs:
+            LOGGER.info("Branch %s found in origin.", branch_name)
+        else:
+            LOGGER.error("Branch %s not found in origin.", branch_name)
+            return
+
         # Checkout the specified branch
-        repo.git.checkout(config.UPSTREAM_BRANCH)
-        LOGGER.info("Checked out branch: %s", config.UPSTREAM_BRANCH)
+        repo.git.checkout(branch_name)
+        LOGGER.info("Checked out branch: %s", branch_name)
 
         # Pull changes from the upstream branch
-        origin.pull(config.UPSTREAM_BRANCH)
-        LOGGER.info("Pulled changes from upstream branch: %s", config.UPSTREAM_BRANCH)
+        origin.pull(branch_name)
+        LOGGER.info("Pulled changes from upstream branch: %s", branch_name)
 
         # Install dependencies using pip
         install_req("pip3 install --no-cache-dir -r requirements.txt")
