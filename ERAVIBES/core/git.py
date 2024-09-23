@@ -8,8 +8,6 @@
 # All rights reserved.
 #
 
-# ERAVIBES/core/git.py
-
 import asyncio
 import shlex
 from typing import Tuple
