@@ -12,11 +12,15 @@ import asyncio
 import shlex
 from typing import Tuple
 
-import git
+from git import Repo
+from git.exc import GitCommandError, InvalidGitRepositoryError
 
 import config
 
-from ..plugins.logging import LOGGER
+from ..logging import LOGGER
+
+loop = asyncio.get_event_loop_policy().get_event_loop()
+
 
 def install_req(cmd: str) -> Tuple[str, str, int, int]:
     async def install_requirements():
@@ -34,43 +38,48 @@ def install_req(cmd: str) -> Tuple[str, str, int, int]:
             process.pid,
         )
 
-    return asyncio.get_event_loop().run_until_complete(install_requirements())
+    return loop.run_until_complete(install_requirements())
+
 
 def git():
-    repo_path = '/path/to/your/repo'  # Replace with the actual path to your Git repository
+    REPO_LINK = config.UPSTREAM_REPO
+    if config.GIT_TOKEN:
+        GIT_USERNAME = REPO_LINK.split("com/")[1].split("/")[0]
+        TEMP_REPO = REPO_LINK.split("https://")[1]
+        UPSTREAM_REPO = f"https://{GIT_USERNAME}:{config.GIT_TOKEN}@{TEMP_REPO}"
+    else:
+        UPSTREAM_REPO = config.UPSTREAM_REPO
     try:
-        repo = git.Repo(repo_path)
-        LOGGER.info("Git repository found at: %s", repo_path)
-
-        # Fetch updates from the upstream repository
-        origin = repo.remotes.origin
-        origin.fetch()
-        LOGGER.info("Fetched updates from upstream repository.")
-
-        # Check if the branch exists
-        branch_name = config.UPSTREAM_BRANCH
-        if branch_name in origin.refs:
-            LOGGER.info("Branch %s found in origin.", branch_name)
+        repo = Repo()
+        LOGGER(__name__).info(f"Git Client Found [VPS DEPLOYER]")
+    except GitCommandError:
+        LOGGER(__name__).info(f"Invalid Git Command")
+    except InvalidGitRepositoryError:
+        repo = Repo.init()
+        if "origin" in repo.remotes:
+            origin = repo.remote("origin")
         else:
-            LOGGER.error("Branch %s not found in origin.", branch_name)
-            return
+            origin = repo.create_remote("origin", UPSTREAM_REPO)
+        origin.fetch()
+        repo.create_head(
+            config.UPSTREAM_BRANCH,
+            origin.refs[config.UPSTREAM_BRANCH],
+        )
+        repo.heads[config.UPSTREAM_BRANCH].set_tracking_branch(
+            origin.refs[config.UPSTREAM_BRANCH]
+        )
+        repo.heads[config.UPSTREAM_BRANCH].checkout(True)
 
-        # Checkout the specified branch
-        repo.git.checkout(branch_name)
-        LOGGER.info("Checked out branch: %s", branch_name)
+        try:
+            repo.create_remote("origin", config.UPSTREAM_REPO)
+        except BaseException:
+            pass
 
-        # Pull changes from the upstream branch
-        origin.pull(branch_name)
-        LOGGER.info("Pulled changes from upstream branch: %s", branch_name)
-
-        # Install dependencies using pip
-        install_req("pip3 install --no-cache-dir -r requirements.txt")
-        LOGGER.info("Installed dependencies.")
-
-    except git.exc.InvalidGitRepositoryError as e:
-        LOGGER.error(f"Invalid Git repository at {repo_path}: {e}")
-    except git.exc.GitCommandError as e:
-        LOGGER.error(f"Error running Git command: {e}")
-    except Exception as e:
-        LOGGER.error(f"An unexpected error occurred: {e}")
-
+    nrs = repo.remote("origin")
+    nrs.fetch(config.UPSTREAM_BRANCH)
+    try:
+        nrs.pull(config.UPSTREAM_BRANCH)
+    except GitCommandError:
+        repo.git.reset("--hard", "FETCH_HEAD")
+    install_req("pip3 install --no-cache-dir -r requirements.txt")
+    LOGGER(__name__).info(f"Fetched Updates from: {REPO_LINK}")
